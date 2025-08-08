@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Text.Json;
 using CommonFramework;
+using Newtonsoft.Json;
 
 namespace DepsJsonDemo;
 
@@ -22,6 +23,9 @@ class Program
         
         // 4. 依存関係の解析
         AnalyzeDependencies();
+        
+        // 5. NuGetパッケージのデモ（Newtonsoft.Json）
+        DemoNewtonsoftJson();
 
         Console.WriteLine("\n=== デモ完了 ===");
         Console.WriteLine("deps.jsonファイルは以下の場所にあります:");
@@ -151,5 +155,35 @@ class Program
         var assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
         
         return Path.Combine(directory ?? "", $"{assemblyName}.deps.json");
+    }
+    
+    static void DemoNewtonsoftJson()
+    {
+        Console.WriteLine("--- Newtonsoft.Json デモ ---");
+        
+        var sampleObject = new
+        {
+            Name = "NuGetパッケージテスト",
+            Version = "13.0.3",
+            Description = "Newtonsoft.Jsonを使用したシリアライゼーション",
+            Timestamp = DateTime.Now,
+            Features = new[] { "JSON処理", "NuGetパッケージ", "deps.json分析" }
+        };
+        
+        // Newtonsoft.Jsonでシリアライズ
+        var newtonsoftJson = JsonConvert.SerializeObject(sampleObject, Formatting.Indented);
+        Console.WriteLine("Newtonsoft.Json 出力:");
+        Console.WriteLine(newtonsoftJson);
+        
+        // System.Text.Jsonと比較
+        var systemTextJson = System.Text.Json.JsonSerializer.Serialize(sampleObject, new JsonSerializerOptions 
+        { 
+            WriteIndented = true 
+        });
+        Console.WriteLine("\nSystem.Text.Json 出力 (比較):");
+        Console.WriteLine(systemTextJson);
+        
+        Console.WriteLine("\n✅ NuGetパッケージ（Newtonsoft.Json）が正常に動作しています！");
+        Console.WriteLine();
     }
 }
