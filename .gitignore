@@ -1,0 +1,79 @@
+# .NET deps.json学習プロジェクト向け .gitignore
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio files
+.vs/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## VS Code files
+.vscode/
+
+## User-specific files
+*.userprefs
+
+## Mono auto generated files
+mono_crash.*
+
+## Build results
+publish/
+*.nupkg
+
+## NuGet
+packages/
+*.nuget.props
+*.nuget.targets
+
+## Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+## NCrunch
+_NCrunch_*
+.*crunch*.local.xml
+nCrunchTemp_*
+
+## MightyMoose
+*.mm.*
+AutoTest.Net/
+
+## Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## JustCode
+.JustCode
+
+## TeamCity
+_TeamCity*
+
+## DotCover
+*.dotCover
+
+## Azure Functions
+local.settings.json
+
+## macOS
+.DS_Store
+
+## Temporary files
+*.tmp
+*.temp

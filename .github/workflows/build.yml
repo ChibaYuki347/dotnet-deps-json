@@ -1,0 +1,45 @@
+# GitHub Actionsワークフロー: ビルドとテスト
+
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Test
+      run: dotnet test --no-build --configuration Release --verbosity normal
+    
+    - name: Publish DepsJsonDemo
+      run: dotnet publish src/DepsJsonDemo/DepsJsonDemo.csproj --configuration Release --output ./publish-demo
+    
+    - name: Test DepsJsonDemo
+      run: ./publish-demo/DepsJsonDemo
+    
+    - name: Analyze deps.json with DependencyAnalyzer
+      run: dotnet run --project src/DependencyAnalyzer/DependencyAnalyzer.csproj -- --file ./publish-demo/DepsJsonDemo.deps.json --verbose
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: published-demo
+        path: ./publish-demo/

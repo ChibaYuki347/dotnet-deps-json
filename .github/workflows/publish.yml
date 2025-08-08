@@ -1,0 +1,45 @@
+# パッケージ公開ワークフロー
+
+name: Publish NuGet Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    
+    - name: Test
+      run: dotnet test --configuration Release --no-build
+    
+    - name: Pack CommonFramework
+      run: dotnet pack src/CommonFramework/CommonFramework.csproj --configuration Release --no-build --output ./nupkg/
+    
+    - name: Publish to GitHub Packages
+      run: |
+        dotnet nuget push ./nupkg/*.nupkg \
+          --api-key ${{ secrets.GITHUB_TOKEN }} \
+          --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+          --skip-duplicate
+    
+    - name: Upload package artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget-packages
+        path: ./nupkg/
