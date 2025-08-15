@@ -1,0 +1,135 @@
+# 完全な自動リリースワークフロー
+# リリースタグ作成で自動的にパッケージを配布し、deps.json変化を記録
+
+name: Automated Release and Package Distribution
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 全履歴を取得（タグ比較用）
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Extract version from tag
+      id: get_version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+    
+    - name: Run tests
+      run: dotnet test --configuration Release --no-build --verbosity normal
+    
+    # パッケージ作成（バージョン情報を注入）
+    - name: Pack CommonFramework with version
+      run: |
+        dotnet pack src/CommonFramework/CommonFramework.csproj \
+          --configuration Release \
+          --no-build \
+          --output ./release-packages/ \
+          -p:PackageVersion=${{ steps.get_version.outputs.version }} \
+          -p:AssemblyVersion=${{ steps.get_version.outputs.version }} \
+          -p:FileVersion=${{ steps.get_version.outputs.version }}
+    
+    # GitHub Packagesに公開
+    - name: Publish to GitHub Packages
+      run: |
+        dotnet nuget push ./release-packages/*.nupkg \
+          --api-key ${{ secrets.GITHUB_TOKEN }} \
+          --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+          --skip-duplicate
+    
+    # デモアプリケーションで新パッケージをテスト
+    - name: Test with published package
+      run: |
+        # 新しいテストプロジェクトを作成
+        mkdir -p ./release-test
+        cd ./release-test
+        dotnet new console -n ReleaseTest
+        cd ReleaseTest
+        
+        # GitHub Packagesからパッケージを参照
+        dotnet add package CommonFramework --version ${{ steps.get_version.outputs.version }} --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+        
+        # ビルドして動作確認
+        dotnet build
+        dotnet publish --output ./publish-test
+        
+        # deps.json解析
+        echo "📊 Published Package deps.json Analysis:"
+        dotnet run --project ../../src/DependencyAnalyzer/DependencyAnalyzer.csproj -- --file ./publish-test/ReleaseTest.deps.json --verbose
+    
+    # リリースノート生成
+    - name: Generate Release Notes
+      id: release_notes
+      run: |
+        cat > release_notes.md << 'EOF'
+        # Release ${{ steps.get_version.outputs.tag }}
+        
+        ## 📦 Published Packages
+        - CommonFramework v${{ steps.get_version.outputs.version }}
+        
+        ## 🔍 deps.json Analysis Results
+        This release includes comprehensive deps.json structure analysis for:
+        - Package reference integration
+        - Dependency resolution verification
+        - SHA512 hash validation
+        
+        ## 🚀 Installation
+        ```bash
+        dotnet add package CommonFramework --version ${{ steps.get_version.outputs.version }} --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+        ```
+        
+        ## 📋 Changes in this Release
+        $(git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s" || echo "- Initial release")
+        EOF
+        
+        echo "Generated release notes:"
+        cat release_notes.md
+    
+    # GitHubリリース作成
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.get_version.outputs.tag }}
+        name: Release ${{ steps.get_version.outputs.tag }}
+        body_path: release_notes.md
+        files: |
+          ./release-packages/*.nupkg
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    # アーティファクト保存
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-${{ steps.get_version.outputs.version }}
+        path: |
+          ./release-packages/
+          ./release-test/ReleaseTest/publish-test/
+        retention-days: 90
