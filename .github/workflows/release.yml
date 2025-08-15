@@ -81,25 +81,29 @@ jobs:
           --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
           --skip-duplicate
     
+    # パッケージ公開後、DepsJsonDemoにCommonFrameworkを追加
+    - name: Update DepsJsonDemo to use published package
+      run: |
+        cd src/DepsJsonDemo
+        dotnet add package CommonFramework --version ${{ steps.get_version.outputs.version }} --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+        cd ../..
+        
+        # 更新されたプロジェクトでビルドテスト
+        dotnet build src/DepsJsonDemo/DepsJsonDemo.csproj --configuration Release
+        dotnet publish src/DepsJsonDemo/DepsJsonDemo.csproj --configuration Release --output ./publish-demo
+    
     # デモアプリケーションで新パッケージをテスト
     - name: Test with published package
       run: |
-        # 新しいテストプロジェクトを作成
-        mkdir -p ./release-test
-        cd ./release-test
-        dotnet new console -n ReleaseTest
-        cd ReleaseTest
-        
-        # GitHub Packagesからパッケージを参照
-        dotnet add package CommonFramework --version ${{ steps.get_version.outputs.version }} --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
-        
-        # ビルドして動作確認
-        dotnet build
-        dotnet publish --output ./publish-test
+        # DepsJsonDemoをテスト実行
+        echo "📊 Published Package Integration Test:"
+        cd ./publish-demo
+        ./DepsJsonDemo
+        cd ..
         
         # deps.json解析
         echo "📊 Published Package deps.json Analysis:"
-        dotnet run --project ../../src/DependencyAnalyzer/DependencyAnalyzer.csproj -- --file ./publish-test/ReleaseTest.deps.json --verbose
+        dotnet run --project src/DependencyAnalyzer/DependencyAnalyzer.csproj -- --file ./publish-demo/DepsJsonDemo.deps.json --verbose
     
     # リリースノート生成
     - name: Generate Release Notes
@@ -150,5 +154,5 @@ jobs:
         name: release-${{ steps.get_version.outputs.version }}
         path: |
           ./release-packages/
-          ./release-test/ReleaseTest/publish-test/
+          ./publish-demo/
         retention-days: 90
