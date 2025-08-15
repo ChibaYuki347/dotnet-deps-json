@@ -27,6 +27,25 @@ jobs:
       with:
         dotnet-version: '9.0.x'
     
+    - name: Configure NuGet for CI/CD
+      run: |
+        # CI/CD用のnuget.configを作成（ローカルフィード除外）
+        cat > nuget.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+            <add key="github-packages" value="https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" protocolVersion="3" />
+          </packageSources>
+          <packageSourceCredentials>
+            <github-packages>
+              <add key="Username" value="${{ github.actor }}" />
+              <add key="ClearTextPassword" value="${{ secrets.GITHUB_TOKEN }}" />
+            </github-packages>
+          </packageSourceCredentials>
+        </configuration>
+        EOF
+    
     - name: Extract version from tag
       id: get_version
       run: |

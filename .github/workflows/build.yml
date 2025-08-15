@@ -20,6 +20,18 @@ jobs:
       with:
         dotnet-version: '9.0.x'
     
+    - name: Configure NuGet for CI/CD
+      run: |
+        # CI/CD用のnuget.configを作成（ローカルフィード除外）
+        cat > nuget.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+          </packageSources>
+        </configuration>
+        EOF
+    
     - name: Restore dependencies
       run: dotnet restore
     
