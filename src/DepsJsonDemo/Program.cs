@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using System.Text.Json;
-using CommonFramework;
 using Newtonsoft.Json;
 
 namespace DepsJsonDemo;
@@ -101,23 +100,10 @@ class Program
     {
         Console.WriteLine("--- 共通フレームワークのデモ ---");
         
-        try
-        {
-            var framework = new FrameworkCore();
-            var info = framework.GetFrameworkInfo();
-            
-            Console.WriteLine("共通フレームワーク情報:");
-            Console.WriteLine($"  名前: {info.Name}");
-            Console.WriteLine($"  バージョン: {info.Version}");
-            Console.WriteLine($"  場所: {info.Location}");
-            
-            var result = framework.ProcessData("サンプルデータ");
-            Console.WriteLine($"\n処理結果: {result}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"共通フレームワークの実行中にエラーが発生しました: {ex.Message}");
-        }
+        Console.WriteLine("CommonFrameworkパッケージは現在プロジェクト参照なしで実行されています。");
+        Console.WriteLine("このデモでは、パッケージなしでの deps.json 構造を確認します。");
+        Console.WriteLine("リリース時にCommonFrameworkパッケージが自動的に追加され、");
+        Console.WriteLine("deps.json の構造変化を観察できます。");
         
         Console.WriteLine();
     }
